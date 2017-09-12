@@ -29,18 +29,18 @@
 #include <ArduinoOTA.h>
 #define AP_TIMEOUT 180
 #define SERIAL_BAUDRATE 115200
-#define MQTT_AUTH true
-#define MQTT_USERNAME "homeassistant"
-#define MQTT_PASSWORD "moscasMoscas82"
-#define LIGHT D1
+#define MQTT_AUTH false
+#define MQTT_USERNAME ""
+#define MQTT_PASSWORD ""
+
 //CONSTANTS
-const String HOSTNAME  = "LightGarageStairs";
+const String HOSTNAME  = "MySuperProject";
 const char * OTA_PASSWORD  = "otapower";
 const String MQTT_LOG = "system/log/"+HOSTNAME;
 const String MQTT_SYSTEM_CONTROL_TOPIC = "system/set/"+HOSTNAME;
-const String MQTT_TEST_TOPIC = HOSTNAME+"/set";
+const String MQTT_TEST_TOPIC = "superTopic";
 //MQTT BROKERS GRATUITOS PARA TESTES https://github.com/mqtt/mqtt.github.io/wiki/public_brokers
-const char* MQTT_SERVER = "192.168.187.203";
+const char* MQTT_SERVER = "iot.eclipse.org";
 
 WiFiClient wclient;
 PubSubClient client(MQTT_SERVER,1883,wclient);
@@ -58,8 +58,7 @@ void setup() {
    útil para quando alteramos a password do AP*/
   wifiManager.setTimeout(AP_TIMEOUT);
   wifiManager.autoConnect(HOSTNAME.c_str());
-  client.setCallback(callback);
-  pinMode(LIGHT,OUTPUT); 
+  client.setCallback(callback); 
 }
 
 //Chamada de recepção de mensagem 
@@ -68,7 +67,6 @@ void callback(char* topic, byte* payload, unsigned int length) {
   for (int i=0; i<length; i++) {
     payloadStr += (char)payload[i];
   }
-  Serial.println(payloadStr);
   String topicStr = String(topic);
  if(topicStr.equals(MQTT_SYSTEM_CONTROL_TOPIC)){
   if(payloadStr.equals("OTA_ON")){
@@ -81,26 +79,15 @@ void callback(char* topic, byte* payload, unsigned int length) {
     ESP.restart();
   }
  }else if(topicStr.equals(MQTT_TEST_TOPIC)){
-  if(payloadStr.equals("ON")){
-      turnOn();
-    }else if(payloadStr.equals("OFF")) {
-      turnOff();
-    }
+  //TOPICO DE TESTE
+    Serial.println(payloadStr);
   } 
 } 
-void turnOn(){
-  Serial.println("ON");
-  digitalWrite(LIGHT,HIGH);  
-}
-void turnOff(){
-  digitalWrite(LIGHT,LOW);  
-  Serial.println("OFF");
-}
+  
 bool checkMqttConnection(){
   if (!client.connected()) {
     if (MQTT_AUTH ? client.connect(HOSTNAME.c_str(),MQTT_USERNAME, MQTT_PASSWORD) : client.connect(HOSTNAME.c_str())) {
       //SUBSCRIÇÃO DE TOPICOS
-      Serial.println("CONNECTED");
       client.subscribe(MQTT_SYSTEM_CONTROL_TOPIC.c_str());
       client.subscribe(MQTT_TEST_TOPIC.c_str());
     }
